@@ -7,7 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <DropboxSDK/DropboxSDK.h>
 
-@interface NewPostTextViewController : UITextView
+@interface NewPostTextViewController : UITextView {
+    DBRestClient *restClient;
+
+}
 
 @end

@@ -7,7 +7,19 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <DropboxSDK/DropboxSDK.h>
 
-@interface ViewController : UIViewController
+@interface ViewController : UIViewController {
+    DBRestClient *restClient;
+    
+}
+@property (retain) IBOutlet UIImageView *myImageView;
+
+@property (retain) IBOutlet UIButton* signInButton;
+
+-(IBAction) didPressLink;
+
+
+
 
 @end

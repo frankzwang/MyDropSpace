@@ -7,12 +7,107 @@
 //
 
 #import "NetworkViewController.h"
+#import "ModalPostViewController.h"
 
 @interface NetworkViewController ()
 
 @end
 
 @implementation NetworkViewController
+
+@synthesize filePaths;
+
+- (DBRestClient *)restClient {
+    if (!restClient) {
+        restClient = [[DBRestClient alloc] initWithSession:[DBSession sharedSession]];
+        restClient.delegate = self;
+    }
+    return restClient;
+//    [restClient ]
+}
+
+//file uploading - success
+- (void)restClient:(DBRestClient*)client uploadedFile:(NSString *)destPath from:(NSString *)srcPath metadata:(DBMetadata *)metadata {
+    NSLog(@"File successfully uploaded to: %@", metadata.path);
+}
+
+//file uploading - failure
+- (void)restClient:(DBRestClient*)client uploadFileFailedWithError:(NSError *)error {
+    NSLog(@"File upload failed. Error: %@", error);
+}
+
+- (void)restClient:(DBRestClient *)client loadedMetadata:(DBMetadata *)metadata {
+    if (metadata.isDirectory) {
+        NSLog(@"Folder '%@' contains:", metadata.path);
+        self.files = [[NSMutableArray alloc] init];
+        self.filePaths = [[NSMutableArray alloc] init];
+        NSArray* validExtensions = [NSArray arrayWithObjects:@"txt", nil];
+        //NSMutableArray* newPostPaths = [NSMutableArray new];
+        for (DBMetadata *file in metadata.contents) {
+            
+                NSString* extension = [[file.path pathExtension] lowercaseString];
+                if (!file.isDirectory && [validExtensions indexOfObject:extension] != NSNotFound) {
+                    
+                    [self.filePaths addObject:file.path];
+                }
+            //[self.files addObject:file.filename];  //  NSMutableArray.put(file.filename);
+            //NSLog(@"\t%@", file.filename);
+        }
+        
+        for (NSString *currPath in self.filePaths){
+            [self.restClient loadFile:currPath intoPath:[self photoPath]];
+        }
+        
+        //[self.tableView reloadData];
+        NSLog(@"RESTCLIENT FUNC self.files count = %i", [self.filePaths count]);
+    }
+}
+
+- (NSString*)photoPath {
+    return [NSTemporaryDirectory() stringByAppendingPathComponent:@"files.txt"];
+}
+
+- (void)restClient:(DBRestClient*)client loadedFile:(NSString *)destPath {
+    //[self.files addObject:[NSString stringwithContentsOfFile]]
+    [self.files addObject:[NSString stringWithContentsOfFile:destPath encoding:NSUTF8StringEncoding error: NULL]];
+    if([self.files count] == [self.filePaths count]){
+        [self.tableView reloadData];
+    }
+    //story1.text =  ///////////
+}
+
+
+//
+//- (void)loadRandomPhoto {
+//    if ([photoPaths count] == 0) {
+//        
+//        NSString *msg = nil;
+//        if ([DBSession sharedSession].root == kDBRootDropbox) {
+//            msg = @"Put .jpg photos in your Photos folder to use DBRoulette!";
+//        } else {
+//            msg = @"Put .jpg photos in your app's App folder to use DBRoulette!";
+//        }
+//        
+//        [[[UIAlertView alloc]
+//          initWithTitle:@"No Photos!" message:msg delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil]
+//         show];
+//        
+//
+//    } else {
+//
+//        NSString* photoPath;
+//        for(photoPath in photoPaths){
+//            [self.restClient loadFile:photoPath intoPath:[self photoPath]];
+//        }
+//
+//    }
+//}
+
+- (void)restClient:(DBRestClient *)client
+loadMetadataFailedWithError:(NSError *)error {
+    
+    NSLog(@"Error loading metadata: %@", error);
+}
 
 - (id)initWithStyle:(UITableViewStyle)style
 {
@@ -23,16 +118,40 @@
     return self;
 }
 
+- (void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:animated];
+    
+    [[self restClient] loadMetadata:@"/Networks/RI/posts/"];
+    
+}
+
 - (void)viewDidLoad
 {
+    if (![[DBSession sharedSession] isLinked]) {
+    [[[UIAlertView alloc]
+      initWithTitle:@"Alert" message:@"Please sign in to Dropbox to view and add posts."
+      delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil]
+     
+     show];
+    }
+
     [super viewDidLoad];
 
     // Uncomment the following line to preserve selection between presentations.
     // self.clearsSelectionOnViewWillAppear = NO;
  
     // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
+//    self.navigationItem.rightBarButtonItem = self.editButtonItem;
 }
+
+- (void) pressedNewPost {
+    
+    ModalPostViewController *modal = [[ModalPostViewController alloc] initWithNibName:@"ModalPostViewController" bundle:nil];
+    
+    [self presentViewController:modal animated:YES completion:^{[[self restClient] loadMetadata:@"/Networks/RI/posts/"];}];
+}
+
+
 
 - (void)didReceiveMemoryWarning
 {
@@ -46,25 +165,31 @@
 {
 #warning Potentially incomplete method implementation.
     // Return the number of sections.
-    return 0;
+    return 1;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
 #warning Incomplete method implementation.
     // Return the number of rows in the section.
-    return 0;
+    NSLog(@"self.files count = %i", [self.filePaths count]);
+    return [self.filePaths count];
 }
+
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     static NSString *CellIdentifier = @"Cell";
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier forIndexPath:indexPath];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
+    cell.textLabel.text = [self.files objectAtIndex:indexPath.row];
+    cell.highlighted = NO;
     
     // Configure the cell...
     
+
     return cell;
 }
+
 
 /*
 // Override to support conditional editing of the table view.

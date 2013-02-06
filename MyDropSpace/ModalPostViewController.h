@@ -7,7 +7,16 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <DropboxSDK/DropboxSDK.h>
 
-@interface ModalPostViewController : UIViewController
+@interface ModalPostViewController : UIViewController {
+    DBRestClient *restClient;
+}
+
+@property (assign) IBOutlet UITextView  *inputField;
+
+
+- (IBAction)cancelModalViewClicked:(id)sender;
+- (IBAction)closeModalViewClicked:(id)sender;
 
 @end

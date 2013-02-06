@@ -7,7 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <DropboxSDK/DropboxSDK.h>
 
-@interface NetworkViewController : UITableViewController
+@interface NetworkViewController : UITableViewController {
+    DBRestClient *restClient;
+}
+
+@property (nonatomic, strong) NSMutableArray *filePaths;
+@property (nonatomic, strong) NSMutableArray *files;
+
+-(IBAction) pressedNewPost;
 
 @end
